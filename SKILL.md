@@ -196,6 +196,7 @@ Observed, all of them while building the checks in this file:
 | `decisions-mine` parsed 622 events and mined 0 decisions | a working pipeline, exit 0 |
 | `note --verdict -1` was read by clap as a flag, not a value | verdict recording worked — for `success` and `inert` only |
 | a verification grep searched `*.go` for symbols declared in `sample.py` | three findings "disproved" — the check was wrong, not the tool |
+| `calls` armed its Rust `#[cfg(test)]` rule on a shell script that *mentions* `#[cfg(test)]` in a comment | a live dispatch table reported as test-only dead code |
 
 **Every measurement prints its denominator.** "0 problems over 0 files scanned"
 is not a pass; the checks here exit 2 on it and say so. When you add a check,

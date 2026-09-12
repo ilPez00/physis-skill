@@ -109,10 +109,16 @@ cmd_calls() {
   # says so. OnnxEmbedder's seven "call sites" were all of this kind.
   t=$(printf '%s\n' "$uses" | awk -F: '
     $0 ~ /(^|\/)(tests?|spec|__tests__)\/|_test\.|test_|\.test\.|\.spec\./ { c++; next }
+    # The cfg(test) cutoff is a Rust rule. Applied to every language it made
+    # this script fail on itself: physis-check.sh contains the literal string
+    # "#[cfg(test)]" in a comment, so every use below that comment counted as a
+    # test and a live dispatch table read as dead code. Rust files only, and the
+    # attribute must start its line so a mention in prose does not arm it.
+    $1 !~ /\.rs$/ { next }
     {
       if (!(($1) in cut)) {
         cut[$1] = 0
-        while ((getline l < $1) > 0) { ln++; if (l ~ /#\[cfg\(test\)\]/ && !cut[$1]) cut[$1] = ln }
+        while ((getline l < $1) > 0) { ln++; if (l ~ /^[[:space:]]*#\[cfg\(test\)\]/ && !cut[$1]) cut[$1] = ln }
         close($1); ln = 0
       }
       if (cut[$1] > 0 && $2+0 > cut[$1]) c++
