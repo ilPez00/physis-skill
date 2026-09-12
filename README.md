@@ -77,12 +77,32 @@ Binary, external, no partial credit:
 harsher test. The advantage over the trivial baseline did not.
 
 That +0.025 was *predictable from E53* — its headline was top-3, but its top-1
-column was already thin (+0.058, +0.038). E54 scores top-1. The advantage lives
-in top-3, not top-1.
+column was already thin (+0.058, +0.038). So a prediction was written down
+before the next arm ran: **the advantage lives in top-3, not top-1.**
 
-The point of the example is not the engine. It is that **the second experiment
-was run at all**, and that its result is recorded as PARTIAL rather than as the
-first one's press release.
+**E54b — the retry regime.** One shot is not how an agent works; it emits,
+compiles, retries. Same task, up to 3 compiler-checked attempts, n=15:
+
+| arm | passes within 3 | rate | mean attempts |
+|---|---|---|---|
+| analogy | 12/15 | **0.800** | 1.33 |
+| popularity | 10/15 | 0.667 | 1.10 |
+| permuted null | 7/15 | 0.467 | 1.29 |
+
+**+0.133 over popularity**, where one shot gave +0.025. The pre-registered
+prediction held.
+
+Honest summary of the pair: at one shot, indistinguishable from guessing the
+most-imported module. Given three compiler-checked tries, 80% versus 67%, at a
+mean cost of 1.33 attempts. n=15 against n=40, so the retry arm is the weaker
+measurement of the two — and on most individual cases both arms emit the *same*
+candidate, which is exactly why the one-shot delta was small.
+
+The point of the example is not the engine. It is the shape: a positive, then a
+control that tempered it, then a prediction written down *before* the arm that
+tested it, then that arm. Each result recorded at the strength it earned —
+SUPPORTED, PARTIAL, SUPPORTED-in-one-regime — rather than as the first one's
+press release.
 
 </details>
 
