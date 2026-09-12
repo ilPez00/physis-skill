@@ -9,7 +9,7 @@
 #   physis-check sweep [dir ...]               rule 1 — whole tree
 #   physis-check discriminate --a CMD --b CMD  rule 2 — does the number move?
 #   physis-check map [dir ...]                 rule 3/4 — structural summary
-#   physis-check flow [transcript.jsonl]       rule 6/7 — judge the session
+#   physis-check flow [transcript.jsonl|session-id]  rule 6/7 — judge the session
 #   physis-check recall "<task>"               rule 4 — was this already tried?
 #   physis-check claim "<text>" [conf]         rule 5 — register a refutable claim
 #   physis-check verdict "<text>" success|inert|failure
@@ -41,16 +41,34 @@ find_engine() {
   return 1
 }
 ENGINE="$(find_engine || true)"
+# physis-pro ships `note`, which CREATES a labelled node and asserts its verdict
+# in one step. physis-core's `assert` only moves a node that already exists —
+# recording a fresh outcome through it fails with "no node with label ...".
+find_pro() {
+  local c
+  for c in "${PHYSIS_PRO:-}" "$(command -v physis-pro || true)" \
+           "$HOME/dev/physis-pro/target/release/physis-pro" \
+           "$HOME/.cargo/bin/physis-pro"; do
+    [ -n "$c" ] && [ -x "$c" ] && { echo "$c"; return 0; }
+  done
+  return 1
+}
+PRO="$(find_pro || true)"
 # The embedder falls back to a lexical hash when the ONNX model is not on disk,
 # and it resolves `./models/...` relative to the CURRENT DIRECTORY — so running
 # the same command from two directories gives semantic geometry in one and a
 # hash in the other, with no error either way. Pin it to the engine's own tree.
-if [ -z "${PHYSIS_MODEL_DIR:-}" ] && [ -n "$ENGINE" ]; then
-  for m in "$(dirname "$ENGINE")/../../models/bge-base-en-v1.5" \
-           "$(dirname "$ENGINE")/models/bge-base-en-v1.5"; do
-    [ -d "$m" ] && { export PHYSIS_MODEL_DIR="$(cd "$m" && pwd)"; break; }
+for b in "$ENGINE" "${PRO:-}"; do
+  [ -n "$b" ] || continue
+  for root in "$(dirname "$b")/../.." "$(dirname "$b")"; do
+    if [ -d "$root/models/bge-base-en-v1.5" ]; then
+      root="$(cd "$root" && pwd)"
+      [ -z "${PHYSIS_MODEL_DIR:-}" ] && export PHYSIS_MODEL_DIR="$root/models/bge-base-en-v1.5"
+      [ -z "${PHYSIS_MODELS:-}" ]    && export PHYSIS_MODELS="$root/models"
+      break 2
+    fi
   done
-fi
+done
 export PHYSIS_ALLOW_DEV_LICENCE="${PHYSIS_ALLOW_DEV_LICENCE:-1}"
 export PHYSIS_DATA_DIR="${PHYSIS_DATA_DIR:-$HOME/.physis}"
 
@@ -147,20 +165,40 @@ cmd_claim() {
 cmd_verdict() {
   local text="${1:?usage: physis-check verdict \"<text>\" success|inert|failure}"
   local v="${2:?verdict required: success | inert | failure}"
+  local n
   case "$v" in
-    success|inert|failure) ;;
-    1) v=success ;; 0) v=inert ;; -1) v=failure ;;
+    success|1)  v=success; n=1 ;;
+    inert|0)    v=inert;   n=0 ;;
+    failure|-1) v=failure; n=-1 ;;
     *) echo "verdict must be success|inert|failure (or 1|0|-1)" >&2; return 2 ;;
   esac
-  [ -n "$ENGINE" ] || { skip "no physis-core — outcome not recorded, so the next session repeats this"; return; }
   # A failure recorded is the only thing that stops the next session retrying
-  # it. `node-search` is the read half — run it before starting, not after.
-  engine assert "$text" "$v" | sed 's/^/  /'
+  # it. `physis-check recall` is the read half — run it before starting.
+  if [ -n "$PRO" ]; then
+    "$PRO" note "$text" --verdict "$n" 2>&1 | grep -v '^physis: ' | sed 's/^/  /' || true
+  elif [ -n "$ENGINE" ]; then
+    # No physis-pro: `assert` needs the node to exist already, so say which
+    # label is missing rather than reporting a silent success.
+    local out; out=$(engine assert "$text" "$v")
+    printf '%s\n' "$out" | sed 's/^/  /'
+    printf '%s' "$out" | grep -q 'no node with label' && \
+      skip "physis-core assert cannot create a node; install physis-pro for \`note\`, or register the claim first with: physis-check claim \"$text\""
+  else
+    skip "no engine on this host — outcome not recorded, so the next session repeats this"
+  fi
 }
 cmd_recall() {
   local q="${1:?usage: physis-check recall \"<task>\"}"
-  [ -n "$ENGINE" ] || { skip "no physis-core — cannot check whether this was already tried and already failed"; return; }
-  engine node-search "$q" | sed 's/^/  /'
+  # Must read the store `physis-check verdict` writes. physis-pro and
+  # physis-core keep SEPARATE graphs, so mixing the halves silently recalls
+  # nothing you ever wrote — the loop looks alive and remembers nothing.
+  if [ -n "$PRO" ]; then
+    "$PRO" node-search "$q" 2>&1 | grep -v '^physis: ' | sed 's/^/  /' || true
+  elif [ -n "$ENGINE" ]; then
+    engine node-search "$q" | sed 's/^/  /'
+  else
+    skip "no engine on this host — cannot check whether this was already tried and already failed"
+  fi
 }
 
 # ── rule 6/7 — judge the session, not only the artifact ─────────────────────
@@ -170,9 +208,17 @@ cmd_recall() {
 # cohere, where do they land on the grid — and does any of that beat its null.
 cmd_flow() {
   local tx="${1:-}"
+  # A bare session id works as well as a path. With neither, the newest
+  # transcript on disk is used — which is NOT necessarily this session, since
+  # any other running agent's file may be newer. The path is printed for that
+  # reason; check it before believing the result is about your own work.
+  if [ -n "$tx" ] && [ ! -f "$tx" ]; then
+    tx=$(find "$HOME/.claude/projects" -name "${tx}.jsonl" 2>/dev/null | head -1 || true)
+  fi
   if [ -z "$tx" ]; then
     tx=$(find "$HOME/.claude/projects" -name '*.jsonl' -printf '%T@ %p\n' 2>/dev/null \
          | sort -rn | head -1 | cut -d' ' -f2- || true)
+    [ -n "$tx" ] && printf '  (no transcript given — using the newest on disk, which may be another session)\n'
   fi
   [ -n "$tx" ] && [ -f "$tx" ] || { fail "no transcript found (pass one: physis-check flow <file.jsonl>)"; return; }
   local work; work="$(mktemp -d)"; FLOW_TMP="$work"

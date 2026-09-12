@@ -141,6 +141,11 @@ the search it replaces.**
 **5. Register claims that can be wrong.** `physis-check claim "<x>"`, and
 `physis-check verdict "<outcome>" success|inert|failure` when it resolves.
 
+Both halves must hit the same store. physis-pro and physis-core keep separate
+graphs, and read different model-path variables (`PHYSIS_MODELS` vs
+`PHYSIS_MODEL_DIR`) — so a note can be written under the fallback embedder,
+stored, never recallable, and reported as a success. `physis-check` pins both.
+
 **6. Exit 0 is not a result.** An empty result and a check that never ran look
 identical. Four times while these scripts were being built: `set -e` ended a
 sweep at the first symbol-less file and it read as clean; a shell alias on `ls`

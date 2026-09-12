@@ -117,6 +117,15 @@ physis-check recall "<task>"                        # failure here = already tri
 physis-check verdict "<outcome>" success|inert|failure
 ```
 
+Both halves must hit the **same store**, and two traps make that easy to get
+wrong with no error either way: physis-pro and physis-core keep separate graphs
+(a `note` written to one is invisible to the other's `node-search`), and the two
+binaries read different model variables — `PHYSIS_MODEL_DIR` for physis-core,
+`PHYSIS_MODELS` for physis-pro. A note written under the fallback embedder is
+stored, unrecallable, and reported as success. `physis-check` sets both
+variables and keeps both halves on one binary; if you call the engines directly,
+check the `embedder` line and the `restored N nodes` line.
+
 In a physis-pro tree these are `just recall` / `just dev-loop`
 (`docs/PHYSIS_DEV_LOOP.md`).
 
@@ -175,8 +184,12 @@ call between it and the previous claim came from the model's prior, not from the
 repository.
 
 ```bash
-physis-check flow [transcript.jsonl]     # defaults to the newest Claude Code session
+physis-check flow <session-id|transcript.jsonl>
 ```
+
+With no argument it takes the newest transcript on disk, which is **not
+necessarily this session** — another agent's file may be newer. It prints the
+path it chose; pass your own session id when it matters.
 
 It extracts every claim, checks each for adjacent evidence, and then — with
 physis-core present — runs the claims through `chain`, which reports structure
