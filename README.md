@@ -175,8 +175,9 @@ Chance would flag about one.
 
 The geometry half is scored separately, and on prose it keeps landing at its
 null — five corpora, max Δ +0.0007 against a 0.02 bar, several identical to four
-decimals. That looks like an invariant statistic but is not one: a corpus whose
-topics share no content word returns **Δ +0.0655**, over the bar. The difference
+decimals. That looks like an invariant statistic but is not one: corpora whose
+topics share no content word clear the bar every time there is anything to
+score — **Δ +0.0655, +0.0959, +0.0710** at 3, 4 and 8 topics. The difference
 between the two regimes is shared vocabulary, not corpus size. A Δ≈0 therefore
 means *this corpus has no grouping the method can find* — read the ungated
 halves (structure, compression, unplaced records) and leave the shortlist

@@ -239,12 +239,24 @@ session claims (28 docs) +0.0000, `docs/` (86) +0.0005, `research/` (92)
 decimals, which looks exactly like an invariant statistic — the failure mode
 this control's own source documents twice.
 
-It is not invariant. On a corpus of eight documents per topic drawn from
-vocabularies sharing no content word, the same pass returns **real 0.0655 vs
-null 0.0000, Δ +0.0655** — over the bar, verdict line `carries signal`. What
-separates the two regimes is shared vocabulary, not corpus size: an earlier
-version of that corpus differed only by one boilerplate sentence repeated in
-every document, and it scored real 0.0223 vs null 0.0223, bit-identical in f32.
+It is not invariant. On corpora whose topics share no content word it clears
+the bar every time there is anything to score:
+
+| topics | docs | candidates | real | null | Δ |
+|---:|---:|---:|---:|---:|---:|
+| 2 | 12 | 1 | 0.0000 | 0.0000 | — nothing to score |
+| 3 | 24 | 2 | 0.0655 | 0.0000 | **+0.0655** |
+| 4 | 24 | 2 | 0.0976 | 0.0017 | **+0.0959** |
+| 8 | 48 | 2 | 0.0710 | 0.0000 | **+0.0710** |
+
+Verdict line on all three: `The shortlist carries signal the permuted arm does
+not.` The 2-topic row is the vacuous case, correctly reported as `CONTROL not
+run` rather than as a loss.
+
+What separates the two regimes is shared vocabulary, not corpus size: an earlier
+version of the 3-topic corpus differed only by one boilerplate sentence repeated
+in every document, and it scored real 0.0223 vs null 0.0223 — bit-identical in
+f32.
 
 So the honest reading of a Δ≈0 on prose is **"this corpus has no grouping this
 method can find"**, not "the method cannot find groupings". Treat the shortlist
