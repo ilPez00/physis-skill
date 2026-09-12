@@ -1,0 +1,96 @@
+# physis — an agent skill for judging your own work
+
+An agent skill that makes an assistant check its claims before making them,
+plus the [physis-core](https://github.com/ilPez00/physis-core) engine it records
+those claims in.
+
+It exists because of a measured pattern, not a theory. In one working session an
+agent made four capability claims about a codebase. All four were wrong in the
+same way: **the code was declared, exported, compiled — and called by nothing.**
+
+| symbol | looked like | actually |
+|---|---|---|
+| `OnnxEmbedder` | production ONNX embedder, exported from `lib.rs` | called by nothing; every benchmark number came from a lexical hash |
+| `FitnessShifted`, `OutcomeObserved` | audit event types | emitted by no code path; `replay` silently disagreed with `list` |
+| structural classifier | classified into a 70-cell grid | built its own random-projection embedder — the symbol stream was noise with a schema |
+| `build_structural` ← `ledger` | trace-fed n-gram tables | both halves present, join absent |
+
+A module that compiles and exports is not a module that runs.
+
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ilPez00/physis-skill/main/install.sh | bash
+```
+
+Or from a clone: `./install.sh`. Flags: `--skill-only` (rules, no engine),
+`--rev <branch-or-sha>` (pin physis-core).
+
+Installs the skill to `~/.claude/skills/physis/` and `physis-core` via
+`cargo install`. Needs a Rust toolchain for the engine; `--skill-only` does not.
+
+## What it does
+
+Four failure modes, each with a **mechanical check** rather than an instruction
+to be careful:
+
+**1. Declared ≠ called.** Before writing "X works", grep for call sites.
+Repo sweep: `~/.claude/skills/physis/scripts/declared-never-called.sh [dirs]`.
+
+**2. Does the measurement discriminate?** A benchmark whose score does not move
+when the thing it measures moves is not a benchmark. The reference case: a
+structure benchmark scored *identically* under a random-projection hash and a
+real sentence transformer — repeat 100%, anomaly 100%, compression ~24% either
+way. It could not fail, so it was not evidence. Before quoting a number, name
+the arm it would lose to, then run both.
+
+**3. Do not compress a system to one noun.** Three attempts in one session
+reduced a 190-module system to a single noun. Each was sharper than the last and
+each was wrong. Sharpness is not correctness.
+
+**4. Read the map before grepping; recall before working.**
+`scripts/gen-wiki.sh` generates a module map — one line per module from its own
+`//!` header. Measured: ~4.4k tokens, and it replaced an inventory that had been
+rebuilt by hand three times in one session.
+
+A *symbol* index was also built, measured at ~26k tokens, and deliberately
+discarded — it answers what `grep -rn "fn foo"` answers for ~50 tokens against
+fresher data. **A wiki page earns its keep only when reading it is cheaper than
+the search it replaces.**
+
+## Recording claims so they can be refuted
+
+```bash
+physis-core hypothesis create "<claim>" --confidence 0.6
+physis-core hypothesis evidence <id> "<measurement>" --polarity contradicting
+physis-core hypothesis transition <id> Contradicted --reason "<the control>"
+physis-core replay --subject <uuid> --at <ISO8601>   # belief state at T
+physis-core hypothesis open                           # predictions never resolved
+```
+
+The point is not the storage. It is that a claim you wrote down last week comes
+back with its evidence attached, so the next session does not rediscover it from
+scratch — and a prediction you made comes back unresolved until you score it.
+
+## Honest limits
+
+- `declared-never-called.sh` is textual, not a compiler pass. Trait dispatch and
+  macro use are invisible to it, so **its output is a list of questions, not
+  verdicts.** It is written for Rust; the pattern generalises, the regex does not.
+- It had two bugs while being written. `--include` placed after `--` made grep
+  read the flag as a filename (15 false positives); a missing `|| true` under
+  `set -e` ended a sweep at the first symbol-less file and reported 24 items
+  where the full run finds 403 — with no sign of truncation in the output. Both
+  are comments in the source now. A tool built to catch *looks-fine-but-isn't*
+  was itself looks-fine-but-isn't.
+- `physis-core hypothesis list` reports a status derived from fitness while
+  `replay` reconstructs it from the event log, and **they can disagree.** Do not
+  cite `replay` as authoritative until that is fixed.
+- Installing without `--features embed-onnx`, or with no model weights on disk,
+  resolves the embedder to random projection. That is a lexical hash: it fails
+  the semantic self-test by design and says so on stderr. The installer sets the
+  feature; the weights are yours to supply.
+
+## Licence
+
+Apache-2.0, matching physis-core.
