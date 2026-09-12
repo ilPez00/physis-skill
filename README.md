@@ -158,8 +158,17 @@ repository. With physis-core present it then runs the claims through `chain`,
 which reports structure, coverage, drift from the original ask, **and the
 label-permuted control in the same pass**.
 
-Measured on a real 737-event session: 28 claims, **7 with nothing behind them**,
-and a geometry that did not beat its own null. Read the control line first — and
+Measured on two real sessions, against the arm it has to beat — the same rule
+with event order shuffled 200 times (`scripts/flow-null.py`):
+
+| session | claims | ungrounded | shuffled null | Δ |
+|---|---:|---:|---:|---:|
+| 737 events | 28 | 7 (0.250) | 1.3 (0.048) sd 1.19 | **+0.202** |
+| 383 events | 13 | 9 (0.692) | 1.0 (0.080) sd 1.01 | **+0.612** |
+
+Chance would flag about one. The geometry half of the same run did **not** beat
+its null — the two verdicts are read separately, and the tool says which is
+which. Read the control line first — and
 the embedder line before that, because `chain` runs happily on the fallback
 lexical hash and resolves its model path relative to the current directory, so
 the same command is semantic in one directory and a hash in another with no

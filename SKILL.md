@@ -193,8 +193,23 @@ Read the control line first, and the embedder line before that:
 - `NOT ABOVE THE NULL` ⇒ shape, not knowledge. Report nothing from the cells.
 - `CONTROL not run` ⇒ `NOT MEASURED`, never a pass.
 
-Measured on a real 737-event session: 28 claims, **7 with no tool call behind
-them**, and a geometry that did not beat its own null.
+Rule 2 applies to this check as well — the arm it must beat is chance
+clustering of claims and tool calls:
+
+```bash
+scripts/flow-null.py <transcript.jsonl>   # same rule, event order shuffled 200x
+```
+
+Measured on two real sessions:
+
+| session | claims | ungrounded | shuffled null | Δ |
+|---|---:|---:|---:|---:|
+| 737 events | 28 | 7 (0.250) | 1.3 (0.048) sd 1.19 | **+0.202** |
+| 383 events | 13 | 9 (0.692) | 1.0 (0.080) sd 1.01 | **+0.612** |
+
+The flagged claims are not an artifact of sequence shape. Chance would flag
+about one. The geometry half of the same run did **not** beat its null — read
+the two verdicts separately.
 
 ## The checklist
 
