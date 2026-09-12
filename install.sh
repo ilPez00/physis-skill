@@ -32,17 +32,22 @@ say "installing skill to $SKILL_DIR"
 mkdir -p "$SKILL_DIR/scripts"
 if [ -f "$SRC/SKILL.md" ]; then
   cp "$SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
-  cp "$SRC"/scripts/*.sh "$SKILL_DIR/scripts/"
+  cp "$SRC"/scripts/*.sh "$SRC"/scripts/*.py "$SKILL_DIR/scripts/"
 else
   # curl|bash path: no clone on disk, fetch the files directly.
   RAW="https://raw.githubusercontent.com/ilPez00/physis-skill/main"
   curl -fsSL "$RAW/SKILL.md" -o "$SKILL_DIR/SKILL.md"
-  for f in declared-never-called.sh gen-wiki.sh; do
+  for f in declared-never-called.sh gen-wiki.sh physis-check.sh flow.py; do
     curl -fsSL "$RAW/scripts/$f" -o "$SKILL_DIR/scripts/$f"
   done
 fi
-chmod +x "$SKILL_DIR"/scripts/*.sh
-say "skill installed"
+chmod +x "$SKILL_DIR"/scripts/*.sh "$SKILL_DIR"/scripts/*.py
+# Rule 6: prove what was installed runs, rather than trusting that cp exited 0.
+if python3 "$SKILL_DIR/scripts/flow.py" --demo >/dev/null 2>&1; then
+  say "skill installed ($(ls "$SKILL_DIR"/scripts | wc -l | tr -d ' ') scripts, self-check passed)"
+else
+  echo "warning: flow.py self-check failed — 'physis-check flow' will not work" >&2
+fi
 
 if [ "$SKILL_ONLY" = "1" ]; then
   say "done (--skill-only). The checks that need the engine will not run."

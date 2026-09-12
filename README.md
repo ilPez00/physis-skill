@@ -31,11 +31,29 @@ Installs the skill to `~/.claude/skills/physis/` and `physis-core` via
 
 ## What it does
 
-Four failure modes, each with a **mechanical check** rather than an instruction
-to be careful:
+Seven failure modes, each with a **mechanical check** rather than an instruction
+to be careful. Every check is a command, so an agent that ran the skill and one
+that merely read it produce different output:
 
-**1. Declared ≠ called.** Before writing "X works", grep for call sites.
-Repo sweep: `~/.claude/skills/physis/scripts/declared-never-called.sh [dirs]`.
+```bash
+physis-check all [dirs]      # the whole checklist
+physis-check calls Symbol    # rule 1 — non-test call sites only
+physis-check sweep [dirs]    # rule 1 — whole tree (Rust/Python/TS/JS/Go)
+physis-check discriminate --a '<real arm>' --b '<control arm>'   # rule 2
+physis-check map [dirs]      # rule 3/4 — module map
+physis-check recall "<task>" # rule 4 — already tried and failed?
+physis-check claim "<x>"     # rule 5 — register something refutable
+physis-check flow [tx.jsonl] # rule 7 — judge the session itself
+```
+
+Engine-backed steps print `NOT MEASURED` when physis-core is absent, rather than
+passing quietly.
+
+**1. Declared ≠ called.** Before writing "X works", check the call sites —
+excluding the declaring file, and counting tests separately. `OnnxEmbedder` had
+seven "call sites" and every one was its own `#[cfg(test)]` module, while every
+benchmark number came from a lexical hash. `physis-check calls Symbol [dirs]`,
+or `physis-check sweep [dirs]` for the whole tree.
 
 **2. Does the measurement discriminate?** A benchmark whose score does not move
 when the thing it measures moves is not a benchmark. The reference case: a
@@ -111,7 +129,7 @@ reduced a 190-module system to a single noun. Each was sharper than the last and
 each was wrong. Sharpness is not correctness.
 
 **4. Read the map before grepping; recall before working.**
-`scripts/gen-wiki.sh` generates a module map — one line per module from its own
+`physis-check map [dirs]` generates a module map — one line per module from its own
 `//!` header. Measured: ~4.4k tokens, and it replaced an inventory that had been
 rebuilt by hand three times in one session.
 
@@ -119,6 +137,33 @@ A *symbol* index was also built, measured at ~26k tokens, and deliberately
 discarded — it answers what `grep -rn "fn foo"` answers for ~50 tokens against
 fresher data. **A wiki page earns its keep only when reading it is cheaper than
 the search it replaces.**
+
+**5. Register claims that can be wrong.** `physis-check claim "<x>"`, and
+`physis-check verdict "<outcome>" success|inert|failure` when it resolves.
+
+**6. Exit 0 is not a result.** An empty result and a check that never ran look
+identical. Four times while these scripts were being built: `set -e` ended a
+sweep at the first symbol-less file and it read as clean; a shell alias on `ls`
+starved a loop of input and it read as "nothing found"; a string-match patch
+missed by one trailing space and the script ran without the new check in it; a
+mining pipeline parsed 622 events, produced 0 results and exited 0. **Every
+measurement prints its denominator**, and these exit 2 rather than call 0-of-0 a
+pass.
+
+**7. Judge the session, not only the artifact.** The code can be right and the
+reporting still wrong. `physis-check flow [transcript.jsonl]` reads a Claude
+Code session, extracts every claim, and flags the ones with no tool call between
+them and the previous claim — those came from the model's prior, not from the
+repository. With physis-core present it then runs the claims through `chain`,
+which reports structure, coverage, drift from the original ask, **and the
+label-permuted control in the same pass**.
+
+Measured on a real 737-event session: 28 claims, **7 with nothing behind them**,
+and a geometry that did not beat its own null. Read the control line first — and
+the embedder line before that, because `chain` runs happily on the fallback
+lexical hash and resolves its model path relative to the current directory, so
+the same command is semantic in one directory and a hash in another with no
+error either way. The tool that judges is subject to rule 1 too.
 
 ## Recording claims so they can be refuted
 
@@ -136,9 +181,15 @@ scratch — and a prediction you made comes back unresolved until you score it.
 
 ## Honest limits
 
-- `declared-never-called.sh` is textual, not a compiler pass. Trait dispatch and
-  macro use are invisible to it, so **its output is a list of questions, not
-  verdicts.** It is written for Rust; the pattern generalises, the regex does not.
+- `declared-never-called.sh` is textual, not a compiler pass. Trait dispatch,
+  macros, decorators and dynamic imports are invisible to it, so **its output is
+  a list of questions, not verdicts.** It covers Rust, Python, TypeScript/JS and
+  Go by declaration regex; a language whose call sites are built at runtime will
+  defeat it.
+- `physis-check flow` extracts claims by cue list, not by understanding. It
+  over-matches ("this fixes nothing" reads as a claim) and misses hedged
+  assertions. It prints its denominator so an empty list is visibly an empty
+  list rather than a clean bill of health.
 - It had two bugs while being written. `--include` placed after `--` made grep
   read the flag as a filename (15 false positives); a missing `|| true` under
   `set -e` ended a sweep at the first symbol-less file and reported 24 items
