@@ -94,3 +94,7 @@ scratch — and a prediction you made comes back unresolved until you score it.
 ## Licence
 
 Apache-2.0, matching physis-core.
+
+## Support
+
+If this saved you a debugging session: <https://praxisweb.xyz/me>

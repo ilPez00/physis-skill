@@ -7,11 +7,11 @@
 set -Eeuo pipefail
 
 REPO_URL="https://github.com/ilPez00/physis-core"
-# Pinned deliberately. `master` is 43 commits behind the branch that carries
-# `embed::select`, so a build from master resolves its embedder to a lexical
+# master now carries `embed::select` (fast-forwarded 2026-09-12). Before that it
+# was 43 commits behind, and a build from it resolved the embedder to a lexical
 # hash unconditionally — the exact defect this skill teaches you to check for.
-# Shipping that as the default install would be a bad joke.
-REV="${PHYSIS_CORE_REV:-research/perspective-invention}"
+# Override with PHYSIS_CORE_REV to pin a branch or sha.
+REV="${PHYSIS_CORE_REV:-master}"
 SKILL_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}/physis"
 SKILL_ONLY=0
 
