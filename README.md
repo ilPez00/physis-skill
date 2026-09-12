@@ -202,6 +202,10 @@ scratch — and a prediction you made comes back unresolved until you score it.
   a list of questions, not verdicts.** It covers Rust, Python, TypeScript/JS and
   Go by declaration regex; a language whose call sites are built at runtime will
   defeat it.
+- **Its false positives come from scope, not from the regex.** Measured: 55/55
+  Go findings true, 28/30 TypeScript findings true — and both misses were
+  consumed by a sibling directory outside the swept path. Pass every tree that
+  can import the code.
 - `physis-check flow` extracts claims by cue list, not by understanding. It
   over-matches ("this fixes nothing" reads as a claim) and misses hedged
   assertions. It prints its denominator so an empty list is visibly an empty

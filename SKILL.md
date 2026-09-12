@@ -48,12 +48,29 @@ Rust, Python, TypeScript/JS and Go. The output is a list of questions, not
 verdicts — trait dispatch, macros, decorators and dynamic imports are invisible
 to a textual sweep, so a listed item may still be reached.
 
-Measured on a 577-file TypeScript tree: 11s, **301 items over 579 files**, and
-8 of 8 sampled at random were true (zero use sites anywhere else in the tree).
-The rate is that codebase's shape — exported types and interfaces consumed only
-in their own file — not a false-positive rate. But 301 questions is past what
-anyone reads, so on a large tree sweep one directory at a time and treat the
-list as a queue, not a report.
+Measured on two real trees:
+
+| tree | files scanned | items | verified |
+|---|---:|---:|---|
+| TypeScript, `praxis_webapp/src` | 449 | 300 | 28/30 true at whole-repo scope |
+| Go, a 390-file plugin | 188 | 55 | **55/55 true** (all of them) |
+
+Two things that measurement changed:
+
+**Test functions are uncalled by construction.** The first Go run returned 1235
+items and **1180 were `TestXxx` in `_test.go`** — the runner calls them by name,
+like `main`. A list that is 96% noise gets skimmed, which is the same as not
+running the check. Test files and `Test*`/`Benchmark*`/`Fuzz*`/`Example*` names
+are excluded now: 1235 → 55 items, 9.7s → 3.1s.
+
+**Scope is the false-positive source.** Of 30 TypeScript findings sampled at
+random, 28 were dead anywhere in the repo and 2 (`TrendPoint`, `DigestEntry`)
+were consumed by a sibling tree — `client/src/` — that was not in the swept
+path. The sweep is exactly as correct as the directories you hand it: **pass
+every tree that can import the code, or expect one false positive in fifteen.**
+
+300 questions is still past what anyone reads, so on a large tree sweep one
+directory at a time and treat the list as a queue, not a report.
 
 ## 2. Does the measurement discriminate?
 
@@ -178,6 +195,7 @@ Observed, all of them while building the checks in this file:
 | a `str.replace` patch missed by one trailing space | the script ran, the new check simply was not in it |
 | `decisions-mine` parsed 622 events and mined 0 decisions | a working pipeline, exit 0 |
 | `note --verdict -1` was read by clap as a flag, not a value | verdict recording worked — for `success` and `inert` only |
+| a verification grep searched `*.go` for symbols declared in `sample.py` | three findings "disproved" — the check was wrong, not the tool |
 
 **Every measurement prints its denominator.** "0 problems over 0 files scanned"
 is not a pass; the checks here exit 2 on it and say so. When you add a check,

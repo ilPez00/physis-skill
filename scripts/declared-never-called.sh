@@ -40,7 +40,11 @@ WANT="${LANGS:-rust,python,ts,tsx,js,go}"
 
 # Names too generic to be evidence of anything, or conventionally called by the
 # language/framework rather than by our code.
-SKIP='^(new|default|from|fmt|len|is_empty|clone|get|set|run|id|next|into|drop|main|init|setup|test|__init__|toString|render|index|type|Props|State|String|Error|Config|Options|Result)$'
+# Test functions are invoked by the runner by name, so they are uncalled by
+# construction — the same category as `main`. Measured on a 390-file Go tree:
+# 1180 of 1235 findings were `TestXxx` in `_test.go`. A list that is 96% noise
+# gets skimmed, which is the same as not running the check.
+SKIP='^(new|default|from|fmt|len|is_empty|clone|get|set|run|id|next|into|drop|main|init|setup|test|__init__|toString|render|index|type|Props|State|String|Error|Config|Options|Result|Test.*|Benchmark.*|Fuzz.*|Example.*)$'
 
 TMP="$(mktemp)"; SCANNED="$(mktemp)"; trap 'rm -f "$TMP" "$SCANNED"' EXIT
 
@@ -51,7 +55,9 @@ for lang in ${WANT//,/ }; do
 
   files=$(find "${DIRS[@]}" \( -name node_modules -o -name target -o -name .git \
           -o -name dist -o -name build -o -name vendor -o -name __pycache__ \
-          -o -name .venv \) -prune -o -name "$glob" -type f -print 2>/dev/null | sort) || true
+          -o -name .venv -o -name tests -o -name __tests__ -o -name spec \) -prune \
+          -o -name "$glob" -type f -print 2>/dev/null \
+          | grep -vE '_test\.|\.test\.|\.spec\.|(^|/)test_[^/]*$' | sort) || true
   [ -n "$files" ] || continue
   echo "-- $lang ($(printf '%s\n' "$files" | wc -l | tr -d ' ') files)"
   printf '%s\n' "$files" >> "$SCANNED"
