@@ -171,11 +171,16 @@ with event order shuffled 200 times (`scripts/flow-null.py`):
 | 737 events | 28 | 7 (0.250) | 1.3 (0.048) sd 1.19 | **+0.202** |
 | 383 events | 13 | 9 (0.692) | 1.0 (0.080) sd 1.01 | **+0.612** |
 
-Chance would flag about one. The geometry half of the same run did **not** beat
-its null, on any corpus tested — five of them, max Δ +0.0007 against a 0.02
-threshold — so its shortlist is unproven and only the ungated halves (structure,
-compression, unplaced records) are worth reading. The two verdicts are reported
-separately, and the tool says which is which. Read the control line first — and
+Chance would flag about one.
+
+The geometry half is scored separately, and on prose it keeps landing at its
+null — five corpora, max Δ +0.0007 against a 0.02 bar, several identical to four
+decimals. That looks like an invariant statistic but is not one: a corpus whose
+topics share no content word returns **Δ +0.0655**, over the bar. The difference
+between the two regimes is shared vocabulary, not corpus size. A Δ≈0 therefore
+means *this corpus has no grouping the method can find* — read the ungated
+halves (structure, compression, unplaced records) and leave the shortlist
+alone. Read the control line first — and
 the embedder line before that, because `chain` runs happily on the fallback
 lexical hash and resolves its model path relative to the current directory, so
 the same command is semantic in one directory and a hash in another with no

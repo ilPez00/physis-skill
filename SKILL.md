@@ -232,14 +232,28 @@ Read the control line first, and the embedder line before that:
 - `NOT ABOVE THE NULL` ⇒ shape, not knowledge. Report nothing from the cells.
 - `CONTROL not run` ⇒ `NOT MEASURED`, never a pass.
 
-**Measured, and negative:** across five corpora the discovery arm has never
-cleared the Δ>0.02 threshold — session claims (28 docs) +0.0000, `docs/` (86)
-+0.0005, `research/` (92) +0.0007, `packets/` (32) control not run, this
-session's claims (4) +0.0000. Two orders of magnitude short, consistently. So
-treat `chain`'s **shortlist** as unproven and read only the halves the control
-does not gate: structure (repeats, differences, contradictions), token
-compression, and which records the ontology cannot place. Those are
-deterministic, not discovery.
+**Measured.** On every *prose* corpus tried, the discovery arm sat at the null:
+session claims (28 docs) +0.0000, `docs/` (86) +0.0005, `research/` (92)
++0.0007, `packets/` (32) control not run. Several were identical to four
+decimals, which looks exactly like an invariant statistic — the failure mode
+this control's own source documents twice.
+
+It is not invariant. On a corpus of eight documents per topic drawn from
+vocabularies sharing no content word, the same pass returns **real 0.0655 vs
+null 0.0000, Δ +0.0655** — over the bar, verdict line `carries signal`. What
+separates the two regimes is shared vocabulary, not corpus size: an earlier
+version of that corpus differed only by one boilerplate sentence repeated in
+every document, and it scored real 0.0223 vs null 0.0223, bit-identical in f32.
+
+So the honest reading of a Δ≈0 on prose is **"this corpus has no grouping this
+method can find"**, not "the method cannot find groupings". Treat the shortlist
+as unproven on that corpus and read the halves the control does not gate —
+structure, token compression, unplaced records — which are deterministic rather
+than discovered.
+
+A first pass here published the negative as a property of the method after five
+prose corpora. One constructed positive refuted it. **Five agreeing corpora are
+five samples from one regime, not a law.**
 
 The winning branch of that control had no test at all until this was checked —
 `discriminates() == true` was indistinguishable from unreachable code. It is
