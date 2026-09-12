@@ -44,6 +44,48 @@ real sentence transformer — repeat 100%, anomaly 100%, compression ~24% either
 way. It could not fail, so it was not evidence. Before quoting a number, name
 the arm it would lose to, then run both.
 
+<details>
+<summary><b>Worked example — a positive, then the control that tempered it</b></summary>
+
+A symbolic analogy engine had never been measured. Two experiments, both built
+so they could lose:
+
+**E53 — ranking.** Link prediction over a real dependency graph, top-3:
+
+| corpus | analogy | popularity | permuted null | random |
+|---|---|---|---|---|
+| n=86 | **0.500** | 0.337 | 0.209 | 0.151 |
+| n=294 | **0.446** | 0.303 | 0.256 | 0.061 |
+
+The null is a *degree-preserving* shuffle: both degree sequences survive, so
+popularity is unchanged by construction and only the pairing dies. Analogy beat
+it by +0.291 / +0.189. The check that made it credible: on the permuted graph
+analogy **lost** to popularity on both corpora — the arms behaving as designed,
+rather than all drifting together the way an artifact does.
+
+**E54 — generation, judged by a compiler.** Delete a load-bearing import, verify
+the build goes red, have the method supply the missing module, run `cargo check`.
+Binary, external, no partial credit:
+
+| arm | gate passes | rate |
+|---|---|---|
+| analogy | 16/40 | 0.400 |
+| popularity | 15/40 | 0.375 |
+| permuted null | 10/40 | 0.250 |
+
+**+0.150 over the null, +0.025 over popularity.** The structure survived the
+harsher test. The advantage over the trivial baseline did not.
+
+That +0.025 was *predictable from E53* — its headline was top-3, but its top-1
+column was already thin (+0.058, +0.038). E54 scores top-1. The advantage lives
+in top-3, not top-1.
+
+The point of the example is not the engine. It is that **the second experiment
+was run at all**, and that its result is recorded as PARTIAL rather than as the
+first one's press release.
+
+</details>
+
 **3. Do not compress a system to one noun.** Three attempts in one session
 reduced a 190-module system to a single noun. Each was sharper than the last and
 each was wrong. Sharpness is not correctness.
