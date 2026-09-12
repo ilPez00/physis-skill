@@ -172,8 +172,10 @@ with event order shuffled 200 times (`scripts/flow-null.py`):
 | 383 events | 13 | 9 (0.692) | 1.0 (0.080) sd 1.01 | **+0.612** |
 
 Chance would flag about one. The geometry half of the same run did **not** beat
-its null — the two verdicts are read separately, and the tool says which is
-which. Read the control line first — and
+its null, on any corpus tested — five of them, max Δ +0.0007 against a 0.02
+threshold — so its shortlist is unproven and only the ungated halves (structure,
+compression, unplaced records) are worth reading. The two verdicts are reported
+separately, and the tool says which is which. Read the control line first — and
 the embedder line before that, because `chain` runs happily on the fallback
 lexical hash and resolves its model path relative to the current directory, so
 the same command is semantic in one directory and a hash in another with no

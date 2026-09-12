@@ -48,6 +48,13 @@ Rust, Python, TypeScript/JS and Go. The output is a list of questions, not
 verdicts — trait dispatch, macros, decorators and dynamic imports are invisible
 to a textual sweep, so a listed item may still be reached.
 
+Measured on a 577-file TypeScript tree: 11s, **301 items over 579 files**, and
+8 of 8 sampled at random were true (zero use sites anywhere else in the tree).
+The rate is that codebase's shape — exported types and interfaces consumed only
+in their own file — not a false-positive rate. But 301 questions is past what
+anyone reads, so on a large tree sweep one directory at a time and treat the
+list as a queue, not a report.
+
 ## 2. Does the measurement discriminate?
 
 **A benchmark whose score does not move when the thing it measures moves is not
@@ -206,6 +213,20 @@ Read the control line first, and the embedder line before that:
   directory and a hash in another, with no error either way.)
 - `NOT ABOVE THE NULL` ⇒ shape, not knowledge. Report nothing from the cells.
 - `CONTROL not run` ⇒ `NOT MEASURED`, never a pass.
+
+**Measured, and negative:** across five corpora the discovery arm has never
+cleared the Δ>0.02 threshold — session claims (28 docs) +0.0000, `docs/` (86)
++0.0005, `research/` (92) +0.0007, `packets/` (32) control not run, this
+session's claims (4) +0.0000. Two orders of magnitude short, consistently. So
+treat `chain`'s **shortlist** as unproven and read only the halves the control
+does not gate: structure (repeats, differences, contradictions), token
+compression, and which records the ontology cannot place. Those are
+deterministic, not discovery.
+
+The winning branch of that control had no test at all until this was checked —
+`discriminates() == true` was indistinguishable from unreachable code. It is
+covered now (`chain::tests::beating_the_control_reaches_the_output`), and the
+branch does print. Rule 1 reaches verdict paths, not only capabilities.
 
 Rule 2 applies to this check as well — the arm it must beat is chance
 clustering of claims and tool calls:
