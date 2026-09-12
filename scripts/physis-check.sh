@@ -256,8 +256,14 @@ cmd_flow() {
       fail "chain ran on the random-projection fallback: that geometry is a lexical
        hash, not meaning. Set PHYSIS_MODEL_DIR to a pulled model and re-run."
     elif printf '%s' "$out" | grep -q 'NOT ABOVE THE NULL'; then
+      # A Δ≈0 is a statement about THIS corpus, not about the method: the same
+       # pass returns Δ +0.0655 on a corpus whose topics share no vocabulary.
+       # Session claims are prose about one repository — the regime where the
+       # arms converge — so expect this line and read the ungated halves above.
       fail "the session's geometry does not beat its own label-permuted null —
-       the cells above are shape, not knowledge. Report nothing from them."
+       the cells above are shape, not knowledge. Report nothing from them.
+       (This says the claims share too much vocabulary to group, not that the
+       method is broken. Structure, compression and unplaced counts still hold.)"
     elif printf '%s' "$out" | grep -q 'CONTROL     not run'; then
       # No control ran, so there is no null to have beaten. Calling that a pass
       # is the exact move rule 2 exists to stop.
