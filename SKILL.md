@@ -170,6 +170,7 @@ Observed, all of them while building the checks in this file:
 | `ls` was shell-aliased to `eza`, so a `find`-fed loop got no files | "no items found" |
 | a `str.replace` patch missed by one trailing space | the script ran, the new check simply was not in it |
 | `decisions-mine` parsed 622 events and mined 0 decisions | a working pipeline, exit 0 |
+| `note --verdict -1` was read by clap as a flag, not a value | verdict recording worked — for `success` and `inert` only |
 
 **Every measurement prints its denominator.** "0 problems over 0 files scanned"
 is not a pass; the checks here exit 2 on it and say so. When you add a check,

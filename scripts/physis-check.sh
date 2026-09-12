@@ -175,7 +175,7 @@ cmd_verdict() {
   # A failure recorded is the only thing that stops the next session retrying
   # it. `physis-check recall` is the read half — run it before starting.
   if [ -n "$PRO" ]; then
-    "$PRO" note "$text" --verdict "$n" 2>&1 | grep -v '^physis: ' | sed 's/^/  /' || true
+    "$PRO" note "$text" "--verdict=$n" 2>&1 | grep -v '^physis: ' | sed 's/^/  /' || true
   elif [ -n "$ENGINE" ]; then
     # No physis-pro: `assert` needs the node to exist already, so say which
     # label is missing rather than reporting a silent success.
