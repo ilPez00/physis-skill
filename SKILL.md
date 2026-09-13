@@ -54,6 +54,20 @@ to a textual sweep, so a listed item may still be reached.
 
 ### The same question one level up: capabilities
 
+This check has a name in the literature — an **architecture fitness function**
+(Ford, Parsons & Kua; ArchUnit is the JVM implementation): an objective
+automated check that an architectural characteristic still holds, turning a
+rule people are *hoped* to follow into one the build enforces. The manifest is
+the rule set; the sweep is the function. The two-halves rule is also older than
+it looks: dead-code analysis has called it liveness for decades, and a
+capability written but never read is a **written-only variable** one level up.
+
+Both of those point at the same upgrade path. ArchUnit queries a model built
+from *compiled* classes; this sweep greps text, and both defects it shipped
+with were textual — the manifest counted itself, and `impl Trait for Type` read
+as a declaration. A grep keeps producing that class of bug. The rules survive a
+move to rust-analyzer or a real call graph; only the scanner changes.
+
 `calls` and `sweep` ask whether a **symbol** runs. Nothing asked whether a
 **capability** runs, and that is the level the claims are made at. Three times
 in one day on physis-core the answer was no:
