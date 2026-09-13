@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run the physis checklist instead of reciting it.
 #
-# The skill's four rules are mechanical, so an agent that "read the skill" and
+# The skill's seven rules are mechanical, so an agent that "read the skill" and
 # an agent that ran the checks are distinguishable only if the checks exist as
 # commands. These are those commands.
 #

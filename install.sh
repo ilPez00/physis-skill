@@ -42,6 +42,18 @@ else
   done
 fi
 chmod +x "$SKILL_DIR"/scripts/*.sh "$SKILL_DIR"/scripts/*.py
+
+# SKILL.md writes every check as `physis-check <sub>`, so that has to BE a
+# command. Without this the skill documents 16 invocations of something that
+# answers "command not found" — a capability declared and never callable, which
+# is the defect the skill's own rule 1 exists to catch.
+BIN_DIR="${PHYSIS_BIN_DIR:-$HOME/.local/bin}"
+mkdir -p "$BIN_DIR"
+ln -sf "$SKILL_DIR/scripts/physis-check.sh" "$BIN_DIR/physis-check"
+case ":$PATH:" in
+  *":$BIN_DIR:"*) say "physis-check -> $BIN_DIR/physis-check" ;;
+  *) echo "note: $BIN_DIR is not on PATH; run the checks as $SKILL_DIR/scripts/physis-check.sh" >&2 ;;
+esac
 # Rule 6: prove what was installed runs, rather than trusting that cp exited 0.
 if python3 "$SKILL_DIR/scripts/flow.py" --demo >/dev/null 2>&1; then
   say "skill installed ($(find "$SKILL_DIR"/scripts -maxdepth 1 -type f \( -name '*.sh' -o -name '*.py' \) | wc -l | tr -d ' ') scripts, self-check passed)"

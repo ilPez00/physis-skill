@@ -26,7 +26,8 @@ curl -fsSL https://raw.githubusercontent.com/ilPez00/physis-skill/main/install.s
 Or from a clone: `./install.sh`. Flags: `--skill-only` (rules, no engine),
 `--rev <branch-or-sha>` (pin physis-core).
 
-Installs the skill to `~/.claude/skills/physis/` and `physis-core` via
+Installs the skill to `~/.claude/skills/physis/`, links `physis-check` into
+`~/.local/bin` (override with `PHYSIS_BIN_DIR`), and installs `physis-core` via
 `cargo install`. Needs a Rust toolchain for the engine; `--skill-only` does not.
 
 ## What it does

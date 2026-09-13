@@ -13,8 +13,12 @@ only externally visible difference between an agent that read this skill and one
 that ran it is the command output:
 
 ```bash
-physis-check all [dirs]     # the whole checklist — scripts/physis-check.sh
+physis-check all [dirs]     # the whole checklist
 ```
+
+`install.sh` links that onto `$PATH`. If the command is not found, it is
+`~/.claude/skills/physis/scripts/physis-check.sh` — run it by path rather than
+skipping the check.
 
 Engine-backed steps print `NOT MEASURED` when physis-core is absent rather than
 passing quietly. A check that silently skips is worse than no check.
