@@ -223,9 +223,11 @@ scratch — and a prediction you made comes back unresolved until you score it.
   where the full run finds 403 — with no sign of truncation in the output. Both
   are comments in the source now. A tool built to catch *looks-fine-but-isn't*
   was itself looks-fine-but-isn't.
-- `physis-core hypothesis list` reports a status derived from fitness while
-  `replay` reconstructs it from the event log, and **they can disagree.** Do not
-  cite `replay` as authoritative until that is fixed.
+- `physis-core hypothesis list` and `replay` disagreed until 2026-09-12:
+  `revise` recorded every transition with `previous == new`, so the history
+  asserted nothing ever changed. Fixed and verified — a claim transitioned to
+  `Contradicted` now reads the same from both. Claims recorded before the fix
+  keep their no-op revisions and are not backfilled.
 - Installing without `--features embed-onnx`, or with no model weights on disk,
   resolves the embedder to random projection. That is a lexical hash: it fails
   the semantic self-test by design and says so on stderr. The installer sets the

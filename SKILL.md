@@ -182,9 +182,22 @@ physis-core hypothesis open                                # predictions never r
 This is how a 7-day-old hypothesis about retrieval was found already predicting
 a finding being independently rediscovered from scratch.
 
-**Known defect:** `list`/`explain` report a status *derived* from fitness while
-`replay` reconstructs it from the event log, and they disagree. See
-`packets/PH-017`. Do not cite `replay` as authoritative until that closes.
+**PH-017 closed 2026-09-12.** `Hypothesis::revise` read `self.status` for both
+ends of every transition, and every caller mutates status *before* revising — so
+each revision recorded `previous == new` and the history asserted nothing ever
+changed. `replay` was blind by construction while `list` derived standing from
+fitness. Events were not missing; the recorded transitions were no-ops.
+
+`revise` now takes the prior status as an argument (the compiler requires the
+caller to have captured it), and `PhysisCore::project_revisions` makes the audit
+trail a **view** over `revision_history` rather than a second record kept in sync
+by discipline — discipline is what failed.
+
+Verified end to end 2026-09-13: a hypothesis transitioned to `Contradicted`
+reads `Contradicted` from both `list` and `replay`. Claims that predate the fix
+keep permanently no-op revisions and are **not** backfilled — `replay` prints
+both values and the reason. A gap in the record is information; a fabricated
+record is not.
 
 ## 6. Exit 0 is not a result
 
