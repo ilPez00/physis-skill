@@ -181,7 +181,43 @@ cmd_verdict() {
   # A failure recorded is the only thing that stops the next session retrying
   # it. `physis-check recall` is the read half — run it before starting.
   if [ -n "$PRO" ]; then
-    "$PRO" note "$text" "--verdict=$n" 2>&1 | grep -v '^physis: ' | sed 's/^/  /' || true
+    # Rule 6, found by this check failing to record its own outcome: without
+    # PHYSIS_ALLOW_DEV_LICENCE a dev build exits 2 on the licence gate, `|| true`
+    # swallowed it, and `verdict` printed nothing and exited 0. A verdict that
+    # silently does not record is worse than none — the next session repeats the
+    # work believing it was logged.
+    # `out=$(cmd)` under `set -e` aborts the script the moment cmd fails, so
+    # `rc=$?` on the next line never runs — which is how this fix silently did
+    # nothing on its first attempt. Capture the status in the same expression.
+    local out rc=0
+    out=$("$PRO" note "$text" "--verdict=$n" 2>&1) || rc=$?
+    # `|| true`: when every line is a `physis:` banner, grep -v filters them all
+    # and returns 1, which under `set -e -o pipefail` aborts before the failure
+    # below can be reported. Third variant of the same trap in this one function.
+    printf '%s\n' "$out" | grep -v '^physis: ' | sed 's/^/  /' || true
+    if [ "$rc" -ne 0 ]; then
+      # Built as a plain variable: a `$( ... grep -q ... && ... )` inside the
+      # message returns non-zero when the pattern misses, and `set -e` kills the
+      # script before `fail` ever prints — which is how the first version of
+      # this very fix stayed silent.
+      # Tested 2026-09-13 against a real dev build. There are three distinct
+      # licence failures here and they need different advice; the first version
+      # of this hint offered only one, and it was the one that does not apply.
+      # PHYSIS_ALLOW_DEV_LICENCE=1 disables the *gate*, not the *check*, so it
+      # never fixes a missing or mismatched licence on its own. A hint that does
+      # not resolve the failure is a silent failure one level up.
+      local hint=""
+      case "$out" in
+        *"signature is not valid"*)
+          hint=" The licence in PHYSIS_DATA_DIR (default ~/.physis) is signed for a different vendor key. Point PHYSIS_LICENSE_FILE at one built for this binary." ;;
+        *"no licence found"*|*"no license found"*)
+          hint=" No licence: set PHYSIS_LICENSE_FILE=/path/to/license.key, or place one at .physis/license.key." ;;
+        *licence*|*license*)
+          hint=" Licence check failed; PHYSIS_ALLOW_DEV_LICENCE=1 disables the gate but does not supply a licence." ;;
+      esac
+      fail "verdict NOT recorded — '$PRO note' exited $rc.$hint"
+      return 1
+    fi
   elif [ -n "$ENGINE" ]; then
     # No physis-pro: `assert` needs the node to exist already, so say which
     # label is missing rather than reporting a silent success.
