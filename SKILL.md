@@ -52,6 +52,54 @@ Rust, Python, TypeScript/JS and Go. The output is a list of questions, not
 verdicts — trait dispatch, macros, decorators and dynamic imports are invisible
 to a textual sweep, so a listed item may still be reached.
 
+### The same question one level up: capabilities
+
+`calls` and `sweep` ask whether a **symbol** runs. Nothing asked whether a
+**capability** runs, and that is the level the claims are made at. Three times
+in one day on physis-core the answer was no:
+
+| capability | schema | path that exercised it |
+|---|---|---|
+| bi-temporal validity | `valid_from`/`valid_until`/`expired_at` | none — only a constructor ever wrote `valid_until` |
+| structural machines | `ProofStatus`, `Observation`, `StructuralMachine` | none reachable — defined inside one example |
+| continuous observation | `Observation{source,kind,body,…}` | none — no watcher existed |
+
+Each was found by accident, and each read as present in every document that
+lists capabilities until it was. A capability is present when **both** halves
+run: something writes it, and something reads it. A write with no read is a
+field nobody consults; a read with no write always returns the default.
+
+```bash
+physis-check capabilities [--manifest F] [dirs]
+```
+
+The manifest — `.physis-capabilities` at the root — is where the project states
+which symbols are which, so the claim is checkable instead of narrative:
+
+```
+# capability | write path | read path
+bi-temporal validity   | narrow_until      | is_valid_at
+continuous observation | watch_fs, watch_proc | read_tail, by_source
+```
+
+Comma-separated alternatives satisfy a half if any one is live. No manifest ⇒
+**NOT MEASURED**, never a pass: a project that has not declared its capabilities
+has not had them checked.
+
+Two things running it on its own repo changed, both found because the first run
+returned 14 of 14:
+
+**The manifest counted itself.** It names every symbol it asks about, so a
+capability deleted from the source still had one "use site" — the line claiming
+it. A check that reads its own input as evidence cannot fail. The manifest is
+now excluded from the scan.
+
+**`impl Trait for Type` is not a declaration.** The rule-1 heuristic treats a
+line starting `impl ` as declaring, so every file implementing a trait became a
+declaring file and was dropped from the count: a trait implemented seven times
+in its one consumer read as dead. `impl X for Y` is a *use* of both; only
+inherent `impl Foo {` declares. This fix applies to `calls` and `sweep` too.
+
 Measured on two real trees:
 
 | tree | files scanned | items | verified |
@@ -316,7 +364,8 @@ Before reporting work done:
 physis-check all [dirs]
 ```
 
-- [ ] Every capability I claimed — `physis-check calls`, non-test sites only?
+- [ ] Every capability I claimed — `physis-check capabilities`, both halves?
+- [ ] Every symbol I claimed — `physis-check calls`, non-test sites only?
 - [ ] Every number I quoted — `physis-check discriminate` against its control?
 - [ ] Every summary I wrote — structural, not one noun?
 - [ ] `judge` vs `propose` kept distinct?
