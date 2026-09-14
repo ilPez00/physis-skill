@@ -247,6 +247,16 @@ and the answer at line 43) is worth 44 tokens and 4/5 → 5/5 — but only when 
 happens *during* selection. Written as a pass afterwards it measured as an exact
 no-op: identical totals, identical hits, no error. Rule 6 in its quietest form.
 
+When several agents share one tree — several harnesses, or one harness running
+Commander/Planner/Worker/Reviewer — recall is the operation that decides whether
+the second agent repeats the first. `remember` + `history` is that question's
+cheap form (20 records for 1051 tokens, against reading anyone's transcript),
+and `clients/opencode-physis-observer/` fills the log from OpenCode's
+`tool.execute.after` and `chat.message` hooks so nobody has to remember to.
+Recorded outcomes are `unverified`: a tool's exit status is not a claim that the
+agent's goal was met. Whether this actually cuts duplicated work in a running
+swarm is **NOT MEASURED** — the mechanism exists, the effect has no number.
+
 The same service also has a terminal UI (`physis-system-tui`, mouse and keys
 over `find` / `pack` / `read`), which makes no token claim at all — it is for
 the human half of the interface, and it prints the same denominators.
