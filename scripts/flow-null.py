@@ -15,12 +15,17 @@ kinds = []  # "C" = claim sentence, "T" = evidence tool call, in order
 for line in open(tx, encoding="utf-8", errors="replace"):
     try: rec = json.loads(line)
     except Exception: continue
-    if rec.get("type") not in ("user", "assistant"): continue
+    kind = rec.get("type")
+    if kind not in ("user", "assistant"): continue
     for b in flow.blocks(rec.get("message", {})):
         t = b.get("type")
         if t == "tool_result" or (t == "tool_use" and b.get("name") in flow.EVIDENCE_TOOLS):
             kinds.append("T")
-        elif t == "text":
+        # Claims come from assistant text only, exactly as flow.py counts them.
+        # Counting user text too gave this control twice as many claims as the
+        # arm it is the control for (10 against 5 on the same transcript), and a
+        # control that scores a different population is not a control.
+        elif t == "text" and kind == "assistant":
             for s in re.split(r"(?<=[.!?\n])\s+", b.get("text", "")):
                 s = s.strip()
                 if len(s) >= 20 and not flow.NOT_CLAIM.match(s) and not flow.MARKUP.match(s) \

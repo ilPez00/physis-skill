@@ -345,6 +345,15 @@ Observed, all of them while building the checks in this file:
 | `note --verdict -1` was read by clap as a flag, not a value | verdict recording worked — for `success` and `inert` only |
 | a verification grep searched `*.go` for symbols declared in `sample.py` | three findings "disproved" — the check was wrong, not the tool |
 | `calls` armed its Rust `#[cfg(test)]` rule on a shell script that *mentions* `#[cfg(test)]` in a comment | a live dispatch table reported as test-only dead code |
+| `recall` filtered out the `physis: ` banner lines an unlicensed dev build prints, leaving nothing, exit 0 | "nothing similar has been tried" — the answer that lets the work proceed |
+| `calls` on a name with 0 declarations in 0 files | `FAIL … It does not run — say so.` A typo read as a finding |
+| `NOT MEASURED` exited 0 | indistinguishable from a pass to CI, a hook, or the `all` runner |
+| the module map's `sed` used `\|` as both delimiter and alternation | one error line per file, headers silently dropped: the map was 19% short |
+| `flow-null` counted claims in *user* text, `flow` only in assistant text | a control scoring 10 claims against its arm's 5 |
+
+The last five were found by running this script against itself after a year of
+using it. **A checker is not exempt from its own rules**, and the exemption is
+invisible: every one of those exited 0.
 
 **Every measurement prints its denominator.** "0 problems over 0 files scanned"
 is not a pass; the checks here exit 2 on it and say so. When you add a check,

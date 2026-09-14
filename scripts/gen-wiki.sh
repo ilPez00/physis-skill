@@ -38,7 +38,10 @@ except Exception:
 PY
       ;;
     *.go) grep -m1 '^// Package ' "$f" 2>/dev/null | sed 's|^// ||' ;;
-    *)    grep -m1 -E '^\s*(\*|//) [A-Z]' "$f" 2>/dev/null | sed -E 's|^\s*(\*|//) ||' ;;
+    # `|` is the alternation character in the pattern, so it cannot also be the
+    # sed delimiter: with `s|...|`, sed read the expression as truncated and
+    # printed `unknown option to 's'` on every file that reached this arm.
+    *)    grep -m1 -E '^\s*(\*|//) [A-Z]' "$f" 2>/dev/null | sed -E 's@^\s*(\*|//) @@' ;;
   esac | sed 's/|/\\|/g' | cut -c1-160
 }
 

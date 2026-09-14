@@ -256,6 +256,21 @@ selection, and an exact no-op as a pass afterwards.
   where the full run finds 403 — with no sign of truncation in the output. Both
   are comments in the source now. A tool built to catch *looks-fine-but-isn't*
   was itself looks-fine-but-isn't.
+- **The checks were tested against themselves on 2026-09-14, and five failed.**
+  `recall` printed nothing and exited 0 whenever the Pro binary had no licence
+  (it prints only `physis: ` banners, which the filter removed) — rule 4's step
+  failing rule 6's rule. `calls` on a misspelled symbol reported "it does not
+  run" from 0 declarations over 0 files. `NOT MEASURED` exited 0. The module
+  map's `sed` used `|` as both delimiter and alternation, so headers were
+  dropped silently. `flow-null` counted claims from user text while `flow`
+  counted only assistant text, giving the control twice its arm's population.
+  All five are fixed; `NOT MEASURED` now exits 2, and an explicit
+  `PHYSIS_PRO=`/`PHYSIS_CORE=` that is not executable fails instead of falling
+  back to some other binary on the machine.
+- A store written under one embedder cannot be read under another: the engine
+  prints `restored N nodes (M skipped: embedder mismatch)` and the search still
+  succeeds. `recall` now fails on a nonzero M rather than answering over a
+  partial store.
 - `physis-core hypothesis list` and `replay` disagreed until 2026-09-12:
   `revise` recorded every transition with `previous == new`, so the history
   asserted nothing ever changed. Fixed and verified — a claim transitioned to

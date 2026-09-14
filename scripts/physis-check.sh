@@ -24,10 +24,15 @@ set -Eeuo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
+# NOT MEASURED is its own exit status. It exited 0 until this was tested, which
+# made "no manifest, nothing checked" indistinguishable from "checked, fine" to
+# anything reading the exit code — a CI job, a hook, or the `all` runner. Rule 6
+# applied to the tool that teaches rule 6.
+UNMEASURED=0
 say()  { printf '\n\033[1m── %s\033[0m\n' "$*"; }
 pass() { printf '  \033[32mPASS\033[0m %s\n' "$*"; }
 fail() { printf '  \033[31mFAIL\033[0m %s\n' "$*"; FAILED=1; }
-skip() { printf '  \033[33mNOT MEASURED\033[0m %s\n' "$*"; }
+skip() { printf '  \033[33mNOT MEASURED\033[0m %s\n' "$*"; UNMEASURED=2; }
 
 # ── the engine, if this host has one ────────────────────────────────────────
 # Searched in order: $PHYSIS_CORE, PATH, a physis-pro checkout next door. A
@@ -46,6 +51,15 @@ ENGINE="$(find_engine || true)"
 # physis-pro ships `note`, which CREATES a labelled node and asserts its verdict
 # in one step. physis-core's `assert` only moves a node that already exists —
 # recording a fresh outcome through it fails with "no node with label ...".
+# An explicit override that does not exist is a typo, not a reason to fall back
+# to whatever else is on the machine — the run would then measure a different
+# binary than the one named, and say nothing about it.
+for v in PHYSIS_CORE PHYSIS_PRO; do
+  p="${!v:-}"
+  [ -z "$p" ] && continue
+  [ -x "$p" ] || { printf '  \033[31mFAIL\033[0m %s=%s is not executable — refusing to fall back to another binary.\n' "$v" "$p" >&2; exit 1; }
+done
+
 find_pro() {
   local c
   for c in "${PHYSIS_PRO:-}" "$(command -v physis-pro || true)" \
@@ -73,6 +87,15 @@ for b in "$ENGINE" "${PRO:-}"; do
 done
 export PHYSIS_ALLOW_DEV_LICENCE="${PHYSIS_ALLOW_DEV_LICENCE:-1}"
 export PHYSIS_DATA_DIR="${PHYSIS_DATA_DIR:-$HOME/.physis}"
+
+# The Pro gate verifies signatures even in dev builds, and with no licence it
+# prints three banner lines and exits 0 — which every filtered caller reads as an
+# empty result. Point it at the dev key if one has been generated.
+if [ -z "${PHYSIS_LICENSE_FILE:-}" ]; then
+  for k in "${PHYSIS_DATA_DIR:-$HOME/.physis}/license.key" "$PWD/.physis/license.key"; do
+    [ -f "$k" ] && { export PHYSIS_LICENSE_FILE="$k"; break; }
+  done
+fi
 
 engine() {  # engine <args...> — stderr kept, licence banner dropped
   [ -n "$ENGINE" ] || return 127
@@ -162,7 +185,11 @@ _symbol_scan() {
   SYM_T=${t:-0}
   SYM_DEFS=$(printf '%s\n' "$defs" | grep -c . || true)
   SYM_DECLFILES=$(printf '%s\n' "$decl_files" | grep -c . || true)
-  if [ "$SYM_N" = "0" ]; then SYM_STATE=dead
+  # 0 declarations over 0 files is not evidence that it does not run — it is
+  # evidence that nothing was scanned for it (wrong name, wrong directory).
+  # Reporting that as "it does not run" is the 0/0 pass rule 6 exists to catch.
+  if [ "$SYM_DEFS" = "0" ] && [ "$SYM_N" = "0" ]; then SYM_STATE=absent
+  elif [ "$SYM_N" = "0" ]; then SYM_STATE=dead
   elif [ "$SYM_N" = "$SYM_T" ]; then SYM_STATE=tests
   else SYM_STATE=live; fi
 }
@@ -172,6 +199,7 @@ cmd_calls() {
   _symbol_scan "$sym" "$@"
   printf '%s\n' "$SYM_USES" | sed 's/^/  /' | head -30
   case "$SYM_STATE" in
+    absent) skip "$sym: no declaration and no use site in $(printf '%s ' "${@:-.}")— nothing was scanned for this name. Check the spelling and the directories before reading anything into it." ;;
     dead)  fail "$sym: $SYM_DEFS declaration(s) in $SYM_DECLFILES file(s), 0 use sites elsewhere. It does not run — say so." ;;
     tests) fail "$sym: all $SYM_N use site(s) are tests. It compiles and is exercised; nothing in the product calls it." ;;
     live)  pass "$sym: $((SYM_N - SYM_T)) non-test use site(s) outside its declaring file(s) (+$SYM_T in tests)" ;;
@@ -388,15 +416,43 @@ cmd_verdict() {
     skip "no engine on this host — outcome not recorded, so the next session repeats this"
   fi
 }
+# A store written under one embedder is unreadable under another: the nodes are
+# skipped at load, the search still succeeds, and the answer is "nothing like
+# this was tried" over a store that was never opened. The engine prints the
+# count; nothing read it until this was tested.
+_recall_embedder_warning() {
+  local skipped
+  skipped=$(printf '%s\n' "$1" | sed -n 's/.*restored [0-9]* nodes (\([0-9]*\) skipped: embedder mismatch).*/\1/p' | head -1)
+  [ -n "$skipped" ] && [ "$skipped" != "0" ] || return 0
+  fail "recall read the store but skipped $skipped node(s): embedder mismatch. Those were written under a different embedder and cannot be recalled — this answer is over a partial store."
+}
+
 cmd_recall() {
   local q="${1:?usage: physis-check recall \"<task>\"}"
   # Must read the store `physis-check verdict` writes. physis-pro and
   # physis-core keep SEPARATE graphs, so mixing the halves silently recalls
   # nothing you ever wrote — the loop looks alive and remembers nothing.
+  local out=""
   if [ -n "$PRO" ]; then
-    "$PRO" node-search "$q" 2>&1 | grep -v '^physis: ' | sed 's/^/  /' || true
+    out="$("$PRO" node-search "$q" 2>&1 | grep -v '^physis: ' || true)"
+    # A dev build without PHYSIS_ALLOW_DEV_LICENCE prints only `physis: ` banner
+    # lines and exits 0. Filtering those left an empty result and a success
+    # code: the recall step looked like "nothing similar has been tried", which
+    # is the answer that lets the work proceed. Never infer that from silence.
+    if [ -z "${out//[[:space:]]/}" ]; then
+      skip "recall produced no output at all from '$PRO node-search' (exit 0). That is not \"nothing was tried\" — the store was never read. Try PHYSIS_ALLOW_DEV_LICENCE=1, or PHYSIS_PRO=/path/to/a/licensed/build."
+      return
+    fi
+    printf '%s\n' "$out" | sed 's/^/  /'
+    _recall_embedder_warning "$out"
   elif [ -n "$ENGINE" ]; then
-    engine node-search "$q" | sed 's/^/  /'
+    out="$(engine node-search "$q" || true)"
+    if [ -z "${out//[[:space:]]/}" ]; then
+      skip "recall produced no output from the engine (exit 0) — the store was never read, which is not the same as an empty store."
+      return
+    fi
+    printf '%s\n' "$out" | sed 's/^/  /'
+    _recall_embedder_warning "$out"
   else
     skip "no engine on this host — cannot check whether this was already tried and already failed"
   fi
@@ -514,4 +570,6 @@ case "${1:-}" in
   ""|-h|--help)  sed -n '2,22p' "$0" ;;
   *) echo "unknown subcommand: $1" >&2; exit 2 ;;
 esac
-exit "$FAILED"
+# 1 = something failed · 2 = something could not be measured · 0 = checked and clean
+if [ "$FAILED" != "0" ]; then exit 1; fi
+exit "$UNMEASURED"
