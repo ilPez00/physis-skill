@@ -1,0 +1,53 @@
+# label	sentence — hand-labelled from real Claude Code transcripts, 2026-09-14.
+# claim = an assertion about the repository that could be false and needs evidence.
+# not   = a plan, an instruction, a question, a heading, markup, or a change-list entry.
+claim	Tested latest uncommitted work: `physis system` (physis-core `system.rs`/`system_cli.rs` + `docs/SYSTEM_INTERFACE.md`).
+claim	**Works.** Built offline CLI-only; 11/11 integration tests pass.
+claim	Rule-1 dogfood: `Workspace` has 5 non-test use sites outside its declaring file — wired, not dead.
+claim	Honest read: **not a token saver today.** Real property is *bounded* cost — find mean 366 sd 32 across tree sizes vs grep 496 sd 267 (90-842).
+claim	Lexical BM25 loses recall to `grep -rni | head -20`.
+claim	- full SHA-256 file ID = **43 tokens**/row, 84% of `list` output, 52% of `find`.
+claim	Path already on same line.
+claim	8-hex prefix: 4648 to 1507.
+claim	- `--json` costs **1.8x-11x** human display (`inspect` 948 vs 85).
+claim	- snippet repeats path when match is in filename.
+claim	- `physis-pro/benchmarks/system-interface/token_cost.py` — re-runnable, prints denominators, SKIPPED on absent workspace.
+claim	Outcome recorded via `physis system remember` (obs:14).
+claim	Context compiler now inside the interface; it is a net saver.
+claim	- **Gap bridging** — windows cut at fixed boundaries straddle the answer (`LoginActivity.kt` had 1-40 and 81-120 selected, answer at line 43).
+claim	- **`read path:120-180`** and unambiguous ID-prefix reads; displays print 12-hex IDs, `--json` keeps full SHA-256.
+claim	**57% fewer tokens at equal recall**, cost decided by budget not corpus.
+claim	Per-operation total flipped from **7014 vs 4639 (loss)** to **3052 vs 4639 (+1587 saved)**.
+claim	`find` still loses recall to grep (3/6 vs 5/6) — `pack` is the retrieval answer, not `find`.
+claim	Ablations kept runnable (`--strategy windows`, `--no-bridge`): bridging bought 4/5 to 5/5 for 44 tokens.
+claim	Written as a post-pass it was an exact no-op — budget already spent, no error.
+claim	Window size must be set or a pty renders nothing.
+claim	Tests: **14/14** pass, 3 new (budget+provenance, bridging against its `--no-bridge` control, ranged/prefix reads).
+claim	Docs rewritten: `docs/SYSTEM_INTERFACE.md`.
+claim	Outcome recorded (obs:15).
+claim	**Push blocked — account side, not the repos.** GitHub refuses every push.
+claim	A 40-line window is a short document and BM25 rewards short documents, so one-line files outranked real functions.
+claim	The packed errand costs 6051 tokens at 5/5 answers-in-context against 14179 at 5/5.
+claim	11/11 integration tests pass and the exit code is preserved.
+claim	`list --limit 100` went from 4648 to 1735 tokens.
+claim	physis-core has 46 modules and 22.7k lines.
+not	Agents should read human output.
+not	- `physis-skill/README.md` — matching public section.
+not	- `physis-pro/docs/SYSTEM_INTERFACE.md` — "Token cost, measured" section.
+not	Now implement `pack` in the workspace service.
+not	Now the CLI: `pack`, short IDs in human display, and dropped duplicate excerpts.
+not	Now update the docs and the skill with the new numbers, then build the TUI.
+not	Files first, windows inside the shortlist.
+not	Take the neighbour closing a one-window gap, **during** selection.
+not	**Measured** (`benchmarks/system-interface/pack_vs_shell.py`, 5 questions, 4 trees, answer-in-context scored):
+not	Now document the swarm-tracking path and the plugin.
+not	Verify at https://github.com/settings/emails, then `git push` in each of the three repos.
+not	Let me know if you want the stray directory deleted or gitignored.
+not	I will run the benchmark again after the change.
+not	Should I also wire this into CI?
+not	| task | physis | shell | delta |
+not	# Physis system interface
+not	Next: the capability manifest, then the justfile recipe.
+not	This is the development loop used for this implementation:
+not	The plan is to measure the interface inside the client actually in use.
+not	```

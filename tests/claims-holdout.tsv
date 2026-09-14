@@ -1,0 +1,32 @@
+# label	sentence — held out: labelled from a DIFFERENT session's transcript,
+# after the detector was tuned on claims-fixture.tsv and not touched since.
+not	Now routes + handlers.
+claim	Repo-root scan: 309 files, 3.7s, health stayed 200 throughout.
+not	Now the `license` + `license-file` publish warning, then full test run.
+not	`─────────────────────────────────────────────────`
+not	Now yanking the mislabelled 0.1.2:
+not	Now booting the pro dashboards.
+not	Viewing the restored Hypotheses workbench:
+claim	Confirmed the mechanism.
+claim	Every state type already derives `Serialize`/`Deserialize` — only the persistence envelope was missing.
+claim	Both repos clean and pushed; test servers stopped.
+not	Now the studio upgrade surface — adding the endpoint:
+not	Committing the remaining studio and docs work:
+claim	Staying in the established 0.1.x sequence — the Rust API is additive, though the on-disk format changed shape.
+claim	Another process is writing an agent web UI in this repo right now — same source as the earlier `b5bacfc` commits.
+claim	Writer touched `agent.rs` 3 min ago.
+not	Now verifying live — the gate must actually fire and render:
+not	Leaving them rather than churning a file someone else is writing.
+claim	- **I could not run a true end-to-end agent run** — no LLM provider is configured here, so no `final` event exists.
+claim	Console intact, switcher in the header with CONSOLE marked.
+claim	Panel is genuinely opaque — so the bleed means page content is painted *above* it.
+claim	**The results panel was invisible-but-present.** Screenshot showed page content painting straight through it.
+not	**physis-core** to `21b4bb2` on `master`
+claim	**The echo vector.** `text` is a remote error body, and OpenAI-compatible endpoints quote the offending request back inside `error.message`.
+claim	The 13.6px link is `display:inline` inside a sentence — that's the WCAG 2.5.8 **inline exception**, genuinely exempt.
+claim	The measured 2.68:1 is exactly white-on-`#ff6d8f`.
+not	Re-staging and committing atomically:
+not	Two things worth your attention:
+claim	I said crates.io was at 0.1.5.
+claim	The `-S` search is unreliable here — it matches the commit that *removed* each string.
+claim	If anyone is running 0.1.6-0.1.8 against a multi-tenant setup, the exposure persists until they move to 0.1.9.

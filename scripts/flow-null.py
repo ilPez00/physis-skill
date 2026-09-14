@@ -26,10 +26,11 @@ for line in open(tx, encoding="utf-8", errors="replace"):
         # arm it is the control for (10 against 5 on the same transcript), and a
         # control that scores a different population is not a control.
         elif t == "text" and kind == "assistant":
-            for s in re.split(r"(?<=[.!?\n])\s+", b.get("text", "")):
-                s = s.strip()
-                if len(s) >= 20 and not flow.NOT_CLAIM.match(s) and not flow.MARKUP.match(s) \
-                   and flow.CUE.search(s):
+            # flow.is_claim is the single definition; duplicating it here is how
+            # this control twice ended up scoring a different population than
+            # the arm it is the control for.
+            for s in flow.sentences(b.get("text", "")):
+                if flow.is_claim(s):
                     kinds.append("C")
 
 def ungrounded(seq):
