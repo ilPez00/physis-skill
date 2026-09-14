@@ -202,6 +202,39 @@ The point is not the storage. It is that a claim you wrote down last week comes
 back with its evidence attached, so the next session does not rediscover it from
 scratch — and a prediction you made comes back unresolved until you score it.
 
+## Is the tool itself cheaper than the command it replaces?
+
+Rule 4 applies to tooling, not only to wiki pages, and that includes Physis's
+own agent-facing surface. `physis system` (`capabilities · inspect · list ·
+find · pack · read · history · remember · run · export`, in a physis-pro tree)
+was measured against the shell commands an agent would otherwise run — three
+trees of 147, 194 and 2456 documents, `cl100k_base` over captured
+stdout+stderr.
+
+It lost the first measurement: 7014 tokens against the shell's 4639 over nine
+tasks. The causes were output, not retrieval — a full SHA-256 file ID costs **43
+tokens** and was 84% of `list`'s output; `--json` costs 1.8x–11x the human
+display; the excerpt reprinted the path. Abbreviating IDs in displays (with
+prefix resolution on read) took the nine-task total to **3052 against 4639**.
+
+The larger question was the errand rather than the call: `find` returns
+pointers, and the read that follows is where the tokens go. Packing 40-line
+windows into a token budget answers the question directly, with
+`path:start-end` on every chunk:
+
+| arm | tokens | answer in context | sd |
+|---|---:|---|---:|
+| `system pack --budget 1200` | **6051** | **5/5** | 63 |
+| `grep … \| head -10` then `cat` the top file | 14179 | 5/5 | 2432 |
+| `grep -rni -C5 … \| head -80` | 10670 | 1/5 | 380 |
+
+57% fewer tokens at equal recall, and a cost that barely moves with the tree.
+Two findings generalise: **score recall in the same table as cost** (every
+cheaper-than-grep variant was also 4/5 until the last one), and **a cheap step
+placed after the budget is spent never runs** — bridging the window gap that
+hid the answer at line 43 is worth 44 tokens and a whole answer during
+selection, and an exact no-op as a pass afterwards.
+
 ## Honest limits
 
 - `declared-never-called.sh` is textual, not a compiler pass. Trait dispatch,

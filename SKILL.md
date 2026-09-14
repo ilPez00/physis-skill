@@ -199,6 +199,65 @@ and deliberately discarded: it answers exactly what `grep -rn "fn foo"` answers
 for ~50 tokens against fresher data. **A wiki page earns its keep only when
 reading it is cheaper than the search it replaces.**
 
+### The same rule applies to an interface
+
+`physis system` (in a physis-pro tree: `docs/SYSTEM_INTERFACE.md`, built with
+`cargo build --offline -p physis-core --no-default-features --features cli`)
+exposes the workspace to an agent as `capabilities · inspect · list · find ·
+pack · read · history · remember · run · export`. It is a tool the agent pays
+for in context, so it is subject to the same test as the wiki page: **cheaper
+than the command it replaces, or it does not run.**
+
+Measured first, in the state it shipped in: **it lost.** 7014 tokens against the
+shell's 4639 over nine tasks, and `find` hit 3/6 against grep's 5/6. Three
+causes, all measurable, none of them the retrieval idea:
+
+* a full SHA-256 file ID costs **43 tokens**, and was 84% of `list`'s output and
+  52% of `find`'s — while every row already carried the path;
+* `--json` costs **1.8x–11x** the human display for the same content;
+* the excerpt reprinted the path when the match was in the filename.
+
+Abbreviating the ID in displays (with prefix resolution on read) took `list`
+from 4648 to 1735 tokens and `find` from 366 to 191 mean. The nine-task total
+went from **−2375 to +1587 in the interface's favour.** A saving found by
+deleting output, not by retrieving better.
+
+The larger win came from asking what the errand costs rather than what the call
+costs. `find` returns pointers; the *read* that follows is where the tokens go.
+`pack` ranks 40-line windows instead of whole files and greedily fills a token
+budget, so the answer is the context, with `path:start-end` on every chunk:
+
+| arm | tokens | answer in context | mean | sd |
+|---|---:|---|---:|---:|
+| `system pack --budget 1200` | **6051** | **5/5** | 1210 | 63 |
+| `grep … \| head -10` then `cat` the top file | 14179 | 5/5 | 2836 | 2432 |
+| `grep -rni -C5 … \| head -80` | 10670 | 1/5 | 2134 | 380 |
+
+57% fewer tokens at equal recall, and sd 63 against 2432 — the budget, not the
+corpus, decides the size. Two lessons transfer beyond this tool:
+
+**Score recall in the same table as cost.** Every intermediate version of `pack`
+was cheaper than grep; the first two were also 4/5. A context bundle that misses
+is a cheaper way to be wrong, and it looks like a win in any table that prints
+only tokens.
+
+**A cheap step placed after the budget is spent never runs.** Bridging the
+one-window gap inside a file (`LoginActivity.kt` had 1-40 and 81-120 selected
+and the answer at line 43) is worth 44 tokens and 4/5 → 5/5 — but only when it
+happens *during* selection. Written as a pass afterwards it measured as an exact
+no-op: identical totals, identical hits, no error. Rule 6 in its quietest form.
+
+The same service also has a terminal UI (`physis-system-tui`, mouse and keys
+over `find` / `pack` / `read`), which makes no token claim at all — it is for
+the human half of the interface, and it prints the same denominators.
+
+`history` / `remember` / `run` have no shell equivalent, so claim no saving
+there: they buy provenance. `run` caps each stream at 8 KiB (a 200k-line child:
+3701 tokens against 599001 raw) — but a harness that already truncates tool
+output supplies that itself, and then `run` costs ~186 tokens of wrapper per
+call. **Measure the interface inside the client you actually use**; the same
+operation is a 99% saving in a bare shell and a 186-token tax in Claude Code.
+
 Then recall before working — has this been tried and already failed?
 
 ```bash
@@ -386,6 +445,8 @@ physis-check all [dirs]
 - [ ] Every check I ran — did it print a denominator, or just exit 0?
 - [ ] Every claim I made in this session — `physis-check flow`, evidence adjacent?
 - [ ] Anything I could not verify — labelled `NOT MEASURED`, not implied?
+- [ ] Every tool or interface I routed work through — measured against the
+      command it replaces, in the client I am actually running in?
 - [ ] Outcome recorded with a verdict — `physis-check verdict`?
 
 The checklist is the exit condition, not the report. Running it and reporting
