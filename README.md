@@ -17,6 +17,20 @@ same way: **the code was declared, exported, compiled — and called by nothing.
 
 A module that compiles and exports is not a module that runs.
 
+
+> **60 seconds.** An agent once made four capability claims about a codebase. All four
+> symbols were declared, exported, compiled — **and called by nothing**. This skill makes
+> the assistant check the claim against running code before making it:
+>
+> ```text
+> claim:  "the mining pipeline parses events and produces results"
+> check:  run it → 622 events parsed, 0 results, exit 0
+> verdict: refuted — receipt recorded, claim withdrawn
+> ```
+>
+> Install below; the full story, the measured null controls and the honest limits follow.
+> Negative results stay in the record.
+
 ## Install
 
 ```bash
